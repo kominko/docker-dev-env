@@ -1,0 +1,97 @@
+version: "3.7"
+
+# Run with compatiblity mode to allow deploy settings
+# docker-compose --compatibility up -d
+
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sql
+    environment:
+      SA_USER: sa
+      SA_PASSWORD: 1BestEverPwd!
+      ACCEPT_EULA: "Y"
+    ports:
+      - 1402:1433
+    networks:
+      - local_network
+    volumes:
+      - sqldata:/var/opt/mssql
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1.5G
+
+  rabbit:
+    image: "rabbitmq:3-management"
+    container_name: rabbit
+    networks:
+      - local_network
+    ports:
+      - 8083:15672
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+
+  redis:
+    image: "redis:alpine"
+    container_name: redis
+    ports:
+      - 6379:6379
+    networks:
+      - local_network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 250M
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - 27017:27017
+    networks:
+      - local_network
+    volumes:
+      - mongodata:/data/db
+      - mongoconfigdb:/data/configdb
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 250M
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: nginx
+    ports:
+      - 81:80
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock
+    networks:
+      - local_network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 250M
+
+networks:
+  local_network:
+    driver: bridge
+
+volumes:
+  sqldata:
+  mongodata:
+  mongoconfigdb:
